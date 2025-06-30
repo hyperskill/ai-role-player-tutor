@@ -26,7 +26,7 @@
     "@unhead/vue": "^2.0.11",
     "@vercel/analytics": "^1.5.0",
     "@vueuse/core": "^13.4.0",
-    "ai": "^4.3.16",
+    "ai": "^5.0.0-beta.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "eslint": "^9.30.0",
