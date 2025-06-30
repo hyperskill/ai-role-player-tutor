@@ -9,6 +9,15 @@
 				<p class="text-xl text-muted-foreground">
 					Start with Free, upgrade to Pro when you need more advanced features
 				</p>
+				<NuxtLink
+					to="/"
+				>
+					<Icon
+						name="lucide:arrow-left"
+						class="h-4 w-4"
+					/>
+					Back to Home
+				</NuxtLink>
 			</div>
 
 			<!-- Pricing Cards -->
@@ -97,7 +106,7 @@
 								</UBadge>
 							</div>
 							<div class="mt-4 flex items-baseline justify-center">
-								<span class="text-5xl font-bold">$19</span>
+								<span class="text-5xl font-bold">$2</span>
 								<span class="text-xl text-muted-foreground ml-1">/month</span>
 							</div>
 						</div>
@@ -116,14 +125,7 @@
 									name="lucide:check"
 									class="h-5 w-5 text-green-500 mr-3 mt-0.5"
 								/>
-								<span>Advanced analytics</span>
-							</li>
-							<li class="flex items-start">
-								<Icon
-									name="lucide:check"
-									class="h-5 w-5 text-green-500 mr-3 mt-0.5"
-								/>
-								<span>Unlimited chat history</span>
+								<span>Creating own cases</span>
 							</li>
 							<li class="flex items-start">
 								<Icon
@@ -176,10 +178,6 @@
 					v-if="successMessage"
 					class="mb-4"
 				>
-					<Icon
-						name="lucide:check-circle"
-						class="h-4 w-4"
-					/>
 					<UAlertTitle>Success!</UAlertTitle>
 					<UAlertDescription>{{ successMessage }}</UAlertDescription>
 				</UAlert>
@@ -189,10 +187,6 @@
 					variant="destructive"
 					class="mb-4"
 				>
-					<Icon
-						name="lucide:alert-circle"
-						class="h-4 w-4"
-					/>
 					<UAlertTitle>Error</UAlertTitle>
 					<UAlertDescription>{{ errorMessage }}</UAlertDescription>
 				</UAlert>
