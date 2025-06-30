@@ -64,6 +64,146 @@ Key relationships:
 - Chats link users to specific cases and agents
 - Extended types combine related data (ExtendedChat)
 
+## Supabase Client Usage
+
+### Client Access Patterns
+The project uses `@nuxtjs/supabase` module which provides auto-imported composables:
+
+```typescript
+// Client-side database operations
+const supabase = useSupabaseClient() // Auto-imported
+const user = useSupabaseUser() // Auto-imported, reactive user state
+
+// Server-side operations (API routes) - ALWAYS await serverSupabaseClient
+const supabase = await serverSupabaseClient<{
+	cases: Cases
+}>(event) // Import required, awaited
+const user = await requireAuth(event) // Custom auth utility (not serverSupabaseUser)
+```
+
+### Database Operations
+
+**Basic Query Patterns:**
+```typescript
+// Fetch data with ordering
+const { data: cases } = await supabase
+  .from('cases')
+  .select()
+  .order('id', { ascending: true })
+
+// Insert data with select and single
+const { data: newChat, error } = await supabase
+  .from('chats')
+  .insert({
+    user_id: user.id,
+    case_id,
+    agent_id,
+    status: 'created',
+    messages: []
+  })
+  .select()
+  .single()
+
+// Update data with user verification
+const { data: updatedChat, error } = await supabase
+  .from('chats')
+  .update({ status })
+  .eq('id', chatId)
+  .eq('user_id', user.id) // Always verify user ownership
+  .select()
+  .single()
+
+// Complex filtering with NOT IN
+const { data: existingChat } = await supabase
+  .from('chats')
+  .select('*')
+  .eq('user_id', user.id)
+  .eq('case_id', case_id)
+  .not('status', 'in', '(submitted,passed,can_be_improved,not_passed)')
+  .order('created_at', { ascending: false })
+  .limit(1)
+  .single()
+```
+
+**Complex Queries with Joins:**
+```typescript
+// Fetch chat with related data using (*) syntax
+const { data: chat } = await supabase
+  .from('chats')
+  .select('*, case_id(*), agent_id(*), user_id(*)')
+  .eq('user_id', user.id)
+  .eq('case_id', caseId)
+  .single()
+```
+
+### Authentication Integration
+
+```typescript
+// Use requireAuth utility instead of serverSupabaseUser
+import { requireAuth } from '~/server/utils/requireAuth'
+
+export default defineEventHandler(async (event) => {
+  const user = await requireAuth(event) // Throws 401 if not authenticated
+
+  // User is guaranteed to exist after requireAuth
+  const { data } = await supabase
+    .from('chats')
+    .select('*')
+    .eq('user_id', user.id) // user.id is available
+})
+```
+
+### Error Handling Patterns
+
+```typescript
+// Standard H3 error handling
+const { data: cases, error } = await supabase
+  .from('cases')
+  .select('*')
+
+if (error) {
+  console.error('Error fetching cases:', { message: error.message })
+  throw createError({
+    statusCode: 500,
+    statusMessage: 'Failed to fetch cases'
+  })
+}
+```
+
+### Type Safety
+
+```typescript
+// Import specific types from server/types.ts
+import type { ExtendedChat, Message, Chat, Case } from '~/server/types'
+
+// Typed Supabase client with specific types (NOT Database type)
+const supabase = await serverSupabaseClient<{
+  cases: Case[];
+}>(event)
+
+// Or for chat operations
+const supabase = await serverSupabaseClient<{
+  chat: ExtendedChat;
+}>(event)
+
+// Use custom types for complex data
+const updateData: Partial<Chat> = {
+  messages: updatedMessages,
+  status: 'in progress'
+}
+```
+
+### Best Practices
+
+- **Always await serverSupabaseClient**: Use `await serverSupabaseClient<{ specificType: Type[] }>(event)`
+- **Use requireAuth utility**: Import and use `requireAuth(event)` instead of `serverSupabaseUser`
+- **Verify user ownership**: Always add `.eq('user_id', user.id)` for user-specific data
+- **Use custom types**: Import types from `~/server/types` for complex data structures
+- **Return single records**: Use `.select().single()` when expecting one record
+- **Handle JSON arrays**: Cast to proper types when working with JSON columns
+- **Log errors properly**: Extract serializable properties for logging
+- **Use H3 errors**: Always use `createError()` from H3 for consistent error responses
+
 ## Icons System (@nuxt/icon)
 - Uses **Lucide** icon collection exclusively
 - Icon naming patterns:
@@ -166,9 +306,7 @@ export default defineEventHandler(async (event) => {
 ## AI Features Integration
 
 ### AI SDK Configuration
-- **Framework**: Vercel AI SDK with OpenAI provider
-- **Model**: GPT-4 Turbo Preview (`gpt-4-turbo-preview`)
-- **API Key**: Stored in runtime config (`OPENAI_API_KEY`)
+- **Framework**: Vercel AI Gateway SDK
 - **Dependencies**: `ai`, `@ai-sdk/openai`, `zod`
 
 ### AI Response Generation
@@ -190,14 +328,13 @@ const response = await $fetch(`/api/chats/${chatId}/generate-response`, {
 - Full conversation history
 - User's current message
 
-### AI SDK Import Pattern
+### AI Gateway SDK Import Pattern
 ```typescript
 import { generateText } from 'ai';
-import { openai } from '@ai-sdk/openai';
 
 // Generate contextual response
 const { text } = await generateText({
-  model: openai('gpt-4-turbo-preview'),
+  model: 'xai/grok-3',
   system: systemPrompt,
   prompt: userInput,
   maxTokens: 1000,
@@ -234,7 +371,6 @@ export type Chat = Omit<Chat, 'messages'> & {
 5. UI updates → Real-time via Supabase subscriptions
 
 ### Additional AI Endpoints
-- `POST /api/openai-transcribe` — Audio transcription (existing)
 - Basic prompts available in `server/utils/prompts.ts`
 
 ### AI Best Practices
@@ -282,16 +418,15 @@ Nuxt 3 automatically imports components, composables, and utilities. **No manual
 ```typescript
 // External library imports (AI SDK, third-party packages)
 import { generateText } from 'ai'
-import { openai } from '@ai-sdk/openai'
 import { z } from 'zod'
 
 // Type-only imports (always explicit)
 import type { Message, Chat } from '~/server/types'
-import type { Database } from '~/database.types'
 
 // Server-side imports (in API routes)
 import { requireAuth } from '~/server/utils/requireAuth'
 ```
+
 
 ### Usage Examples (No Imports Needed)
 ```vue

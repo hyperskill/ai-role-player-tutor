@@ -1,0 +1,485 @@
+---
+description: When agent should work with Vercel AI Gateway SDK
+globs:
+alwaysApply: false
+---
+# AI SDK Rules - Vercel AI Gateway Integration
+
+When working with AI features in this project, use the **Vercel AI Gateway SDK** for unified access to multiple AI providers and models.
+
+## Installation & Setup
+
+### Required Dependencies
+```bash
+npm install ai @ai-sdk/gateway
+```
+
+### Authentication Methods
+
+#### 1. Using Vercel OIDC Token (Recommended for Vercel projects)
+```bash
+# Link to Vercel project and pull environment variables
+vercel link
+vercel env pull
+```
+
+The OIDC token automatically authenticates requests without manual API key management. Tokens are valid for 12 hours and require refresh during local development.
+
+#### 2. Using Custom API Keys
+Add provider API keys through the Vercel Dashboard:
+1. Go to AI tab → Integrations
+2. Find your provider and click "Add"
+3. Enter your API key and enable it
+4. Keys are team-scoped and work across projects
+
+## Usage Patterns
+
+### Basic Implementation
+```typescript
+import { generateText } from 'ai';
+
+export default defineEventHandler(async (event) => {
+  const { text } = await generateText({
+    model: 'xai/grok-3', // Format: provider/model-name
+    prompt: 'Your prompt here',
+    maxTokens: 1000,
+    temperature: 0.7,
+  });
+
+  return { response: text };
+});
+```
+
+### With Gateway Provider Instance
+```typescript
+import { generateText } from 'ai';
+import { gateway } from '@ai-sdk/gateway';
+
+export default defineEventHandler(async (event) => {
+  const { text } = await generateText({
+    model: gateway('xai/grok-3'),
+    prompt: 'Your prompt here',
+  });
+
+  return { response: text };
+});
+```
+
+### Custom Gateway Configuration
+```typescript
+import { createGateway } from '@ai-sdk/gateway';
+
+const customGateway = createGateway({
+  apiKey: process.env.AI_GATEWAY_API_KEY,
+  baseURL: 'https://ai-gateway.vercel.sh/v1/ai',
+});
+
+export default defineEventHandler(async (event) => {
+  const { text } = await generateText({
+    model: customGateway('openai/gpt-4o'),
+    prompt: 'Your prompt here',
+  });
+
+  return { response: text };
+});
+```
+
+## Model Specification Format
+
+Models follow the pattern: `provider/model-name`
+
+Examples:
+- `xai/grok-3` - Grok 3 from xAI
+- `openai/gpt-4o` - GPT-4o from OpenAI
+- `anthropic/claude-3-5-sonnet` - Claude 3.5 Sonnet from Anthropic
+- `google/gemini-2-5-pro` - Gemini 2.5 Pro from Google
+
+## Global Provider Configuration
+
+Set a default provider for all AI SDK calls in `server/utils/ai.ts`:
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+
+// Set global default provider
+globalThis.AI_SDK_DEFAULT_PROVIDER = openai;
+```
+
+Then use without specifying provider:
+```typescript
+import { generateText } from 'ai';
+
+const { text } = await generateText({
+  model: 'gpt-4o', // Uses default provider
+  prompt: 'Your prompt here',
+});
+```
+
+## Integration with Existing Chat System
+
+### Update `generate-response.post.ts`
+```typescript
+import { generateText } from 'ai';
+import type { Message } from '~/server/types';
+
+export default defineEventHandler(async (event) => {
+  const user = await requireAuth(event);
+  const { userMessage } = await readBody(event);
+  const chatId = getRouterParam(event, 'id');
+
+  // Get chat context
+  const supabase = await serverSupabaseClient(event);
+  const { data: chat } = await supabase
+    .from('chats')
+    .select('*, case_id(*), agent_id(*)')
+    .eq('id', chatId)
+    .eq('user_id', user.id)
+    .single();
+
+  // Build system prompt with context
+  const systemPrompt = `
+    You are ${chat.agent_id.name}, ${chat.agent_id.position}.
+
+    Case Context: ${chat.case_id.story}
+
+    Your behavior: ${chat.agent_id.prompt}
+
+    Conversation history:
+    ${chat.messages.map((m: Message) => `${m.type}: ${m.text}`).join('\n')}
+  `;
+
+  // Generate AI response
+  const { text } = await generateText({
+    model: 'xai/grok-3',
+    system: systemPrompt,
+    prompt: userMessage,
+    maxTokens: 1000,
+    temperature: 0.7,
+  });
+
+  // Save messages and return response
+  const updatedMessages = [
+    ...chat.messages,
+    { type: 'user', text: userMessage, timestamp: new Date().toISOString() },
+    { type: 'agent', text, timestamp: new Date().toISOString() }
+  ];
+
+  await supabase
+    .from('chats')
+    .update({ messages: updatedMessages })
+    .eq('id', chatId);
+
+  return { response: text };
+});
+```
+
+## Error Handling
+
+```typescript
+import { generateText } from 'ai';
+
+export default defineEventHandler(async (event) => {
+  try {
+    const { text } = await generateText({
+      model: 'xai/grok-3',
+      prompt: 'Your prompt here',
+    });
+    return { response: text };
+  } catch (error) {
+    console.error('AI Generation Error:', error);
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to generate AI response'
+    });
+  }
+});
+```
+
+## Best Practices
+
+### Model Selection
+- **Fast responses**: Use `xai/grok-3-mini` or `openai/gpt-4o-mini`
+- **High quality**: Use `xai/grok-3` or `anthropic/claude-3-5-sonnet`
+- **Cost-effective**: Use `google/gemini-2-0-flash` or `alibaba/qwen-3-14b`
+
+### Configuration
+- Set appropriate `maxTokens` limits (1000-2000 for responses)
+- Use `temperature: 0.7` for balanced creativity
+- Include conversation context in system prompts
+- Validate user input with Zod schemas
+
+### Environment Setup
+```bash
+# For local development
+vercel env pull
+
+# Or set custom environment variables
+AI_GATEWAY_API_KEY=your_key_here
+```
+
+### Type Safety
+```typescript
+import type { Message, Chat } from '~/server/types';
+
+// Always use proper TypeScript types
+const message: Message = {
+  type: 'agent',
+  text: generatedText,
+  timestamp: new Date().toISOString()
+};
+```
+
+## Available AI Providers and Models
+
+### Alibaba
+
+- **Qwen 3.32B**
+  Context: 128k
+  Input: $0.40/M • Output: $0.80/M
+  Providers: Alibaba
+
+- **Qwen3-14B**
+  Context: 41k
+  Input: $0.08/M • Output: $0.24/M
+  Providers: DeepInfra
+
+- **Qwen3-235B-A22B**
+  Context: 41k
+  Input: $0.20/M • Output: $0.60/M
+  Providers: DeepInfra, Fireworks
+
+- **Qwen3-30B-A3B**
+  Context: 41k
+  Input: $0.10/M • Output: $0.30/M
+  Providers: DeepInfra
+
+- **QwQ-32B**
+  Context: 131k
+  Input: $0.90/M • Output: $0.90/M
+  Providers: Fireworks, Groq
+
+### Amazon Bedrock
+
+- **Nova Lite**
+  Context: 300k
+  Input: $0.06/M • Output: $0.24/M
+
+- **Nova Micro**
+  Context: 128k
+  Input: $0.04/M • Output: $0.14/M
+
+- **Nova Pro**
+  Context: 300k
+  Input: $0.80/M • Output: $3.20/M
+
+### Anthropic
+
+- **Claude 3 Haiku**
+  Context: 200k
+  Input: $0.25/M • Output: $1.25/M
+
+- **Claude 3 Opus**
+  Context: 200k
+  Input: $15.00/M • Output: $75.00/M
+
+- **Claude 3.5 Haiku**
+  Context: 200k
+  Input: $0.80/M • Output: $4.00/M
+
+- **Claude 3.5 Sonnet**
+  Context: 200k
+  Input: $3.00/M • Output: $15.00/M
+
+- **Claude 3.7 Sonnet**
+  Context: 200k
+  Input: $3.00/M • Output: $15.00/M
+
+- **Claude 4 Opus**
+  Context: 200k
+  Input: $15.00/M • Output: $75.00/M
+
+- **Claude 4 Sonnet**
+  Context: 200k
+  Input: $3.00/M • Output: $15.00/M
+
+### Cohere
+
+- **Command A**
+  Context: 256k
+  Input: $2.50/M • Output: $10.00/M
+
+- **Command R**
+  Context: 128k
+  Input: $0.15/M • Output: $0.60/M
+
+- **Command R+**
+  Context: 128k
+  Input: $2.50/M • Output: $10.00/M
+
+### DeepSeek
+
+- **DeepSeek R1**
+  Context: 160k
+  Input: $3.00/M • Output: $8.00/M
+
+- **DeepSeek R1 Distill Llama 70B**
+  Context: 128k
+  Input: $2.20/M • Output: $2.50/M
+
+- **DeepSeek-V3**
+  Context: 128k
+  Input: $0.90/M • Output: $0.90/M
+
+### Google
+
+- **Gemini 2.0 Flash**
+  Context: 1M
+  Input: $0.15/M • Output: $0.60/M
+
+- **Gemini 2.0 Flash Lite**
+  Context: 1M
+  Input: $0.07/M • Output: $0.30/M
+
+- **Gemini 2.5 Flash**
+  Context: 1M
+  Input: $0.30/M • Output: $2.50/M
+
+- **Gemini 2.5 Pro**
+  Context: 1M
+  Input: $2.50/M • Output: $10.00/M
+
+- **Gemma 2 9B IT**
+  Context: 8k
+  Input: $0.20/M • Output: $0.20/M
+
+### Inception
+
+- **Mercury Coder Small Beta**
+  Context: 32k
+  Input: $0.25/M • Output: $1.00/M
+
+### Meta
+
+*(Includes Llama models)*
+_See full markdown file for all Meta models due to large list_
+
+### Mistral
+
+- **Magistral Medium 2506**
+  Context: 128k
+  Input: $2.00/M • Output: $5.00/M
+
+- **Magistral Small 2506**
+  Context: 128k
+  Input: $0.50/M • Output: $1.50/M
+
+- **Ministral 3B**
+  Context: 128k
+  Input: $0.04/M • Output: $0.04/M
+
+- **Ministral 8B**
+  Context: 128k
+  Input: $0.10/M • Output: $0.10/M
+
+- **Mistral Codestral 25.01**
+  Context: 256k
+  Input: $0.30/M • Output: $0.90/M
+
+- **Mistral Large**
+  Context: 32k
+  Input: $2.00/M • Output: $6.00/M
+
+- **Mistral Saba 24B**
+  Context: 33k
+  Input: $0.79/M • Output: $0.79/M
+
+- **Mistral Small**
+  Context: 32k
+  Input: $0.10/M • Output: $0.30/M
+
+- **Mixtral MoE 8x22B Instruct**
+  Context: 2k
+  Input: $1.20/M • Output: $1.20/M
+
+- **Pixtral 12B 2409**
+  Context: 128k
+  Input: $0.15/M • Output: $0.15/M
+
+- **Pixtral Large**
+  Context: 128k
+  Input: $2.00/M • Output: $6.00/M
+
+### Morph
+
+- **Morph V2**
+  Context: 50k
+  Input: $0.90/M • Output: $1.90/M
+
+### OpenAI
+
+- **GPT-3.5 Turbo**
+  Context: 4k
+  Input: $0.50/M • Output: $1.50/M
+
+- **GPT-3.5 Turbo Instruct**
+  Context: 4k
+  Input: $1.50/M • Output: $2.00/M
+
+- **GPT-4 Turbo**
+  Context: 128k
+  Input: $10.00/M • Output: $30.00/M
+
+- **GPT-4.1 / mini / nano**
+  Context: 1M
+  Prices:
+    - GPT-4.1: $2.00/$8.00
+    - Mini: $0.40/$1.60
+    - Nano: $0.10/$0.40
+
+- **GPT-4o / mini**
+  Context: 128k
+  Input: $2.50/M • Output: $10.00/M
+  Mini: $0.15/$0.60
+
+- **o1 / o3 / o3-mini / o4-mini**
+  Context: 200k
+  Prices:
+    - o1: $15.00/$60.00
+    - o3: $2.00/$8.00
+    - o3-mini & o4-mini: $1.10/$4.40
+
+### Perplexity
+
+- **Sonar**
+  Context: 127k
+  Input: $1.00/M • Output: $1.00/M
+
+- **Sonar Pro**
+  Context: 200k
+  Input: $3.00/M • Output: $15.00/M
+
+- **Sonar Reasoning**
+  Context: 127k
+  Input: $1.00/M • Output: $5.00/M
+
+- **Sonar Reasoning Pro**
+  Context: 127k
+  Input: $2.00/M • Output: $8.00/M
+
+### xAI
+
+- **Grok 2**
+  Context: 131k
+  Input: $2.00/M • Output: $10.00/M
+
+- **Grok 2 Vision**
+  Context: 33k
+  Input: $2.00/M • Output: $10.00/M
+
+- **Grok 3 Beta / Fast / Mini / Mini Fast**
+  Context: 131k
+  Prices:
+    - Beta: $3.00/$15.00
+    - Fast: $5.00/$25.00
+    - Mini: $0.30/$0.50
+    - Mini Fast: $0.60/$4.00

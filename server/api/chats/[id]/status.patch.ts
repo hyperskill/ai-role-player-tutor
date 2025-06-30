@@ -1,6 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server';
 import { requireAuth } from '~/server/utils/requireAuth';
 import type { Database } from '~/database.types';
+import { ChatStatus } from '~/server/types';
 
 export default defineEventHandler(async (event) => {
 	const user = await requireAuth(event);
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
 		});
 	}
 
-	const validStatuses = ['created', 'in progress', 'submitted', 'passed', 'can_be_improved', 'not_passed'];
+	const validStatuses = [ChatStatus.CREATED, ChatStatus.IN_PROGRESS, ChatStatus.SUBMITTED, ChatStatus.PASSED, ChatStatus.CAN_BE_IMPROVED, ChatStatus.NOT_PASSED];
 	if (!validStatuses.includes(status)) {
 		throw createError({
 			statusCode: 400,
