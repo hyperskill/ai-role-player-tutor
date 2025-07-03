@@ -1,10 +1,4 @@
-export type Json
-	= | string
-		| number
-		| boolean
-		| null
-		| { [key: string]: Json | undefined }
-		| Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
 	graphql_public: {
@@ -38,6 +32,7 @@ export type Database = {
 				Row: {
 					created_at: string;
 					id: string;
+					language: string;
 					name: string;
 					position: string | null;
 					prompt: string | null;
@@ -46,6 +41,7 @@ export type Database = {
 				Insert: {
 					created_at?: string;
 					id?: string;
+					language?: string;
 					name: string;
 					position?: string | null;
 					prompt?: string | null;
@@ -54,6 +50,7 @@ export type Database = {
 				Update: {
 					created_at?: string;
 					id?: string;
+					language?: string;
 					name?: string;
 					position?: string | null;
 					prompt?: string | null;
@@ -71,6 +68,7 @@ export type Database = {
 					difficulty: number | null;
 					id: string;
 					is_public: boolean;
+					language: string;
 					slug: string;
 					story: string | null;
 					tags: string[];
@@ -86,6 +84,7 @@ export type Database = {
 					difficulty?: number | null;
 					id?: string;
 					is_public?: boolean;
+					language?: string;
 					slug?: string;
 					story?: string | null;
 					tags?: string[];
@@ -101,6 +100,7 @@ export type Database = {
 					difficulty?: number | null;
 					id?: string;
 					is_public?: boolean;
+					language?: string;
 					slug?: string;
 					story?: string | null;
 					tags?: string[];

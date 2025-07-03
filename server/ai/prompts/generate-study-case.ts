@@ -1,9 +1,9 @@
-export const generateStudyCasePrompt = (domain: string) => (`You are a case-design assistant for leadership assessments. Your job is to create structured, text-only case scenarios for evaluating junior and middle-level team leads or project managers using live dialogue-based exercises.
-
+export const generateStudyCasePrompt = (domain: string, language: string) => (`
 Please generate a complete Case Card setup using the structure below, based on the following inputs:
 
 Inputs:
 - Domain: ${domain}
+- Language: ${language}
 - Target skills to assess or improve: [INSERT 2–4 COMPETENCIES FROM LIST BELOW]
 
 Competency Options (pick the most relevant ones for the situation):
@@ -49,10 +49,10 @@ CASE CARD — [Generated Title]
        “VP of [fictional name] wants a decision by [hard deadline].”
 
 3. YOUR ROLE
-   You are the [Team Lead / Project Manager] for this initiative. You have 25 minutes to speak with *[Persona Name]* to understand the problem, choose a course of action, and document a path forward.
+   You are the [Team Lead / Project Manager] for this initiative. You have 25 minutes to speak with *[Agent Name]* to understand the problem, choose a course of action, and document a path forward.
 
 4. THE CONVERSATION
-   • Counterpart  : *[Persona Name], Senior [Discipline]*
+   • Counterpart  : *[Agent Name], Senior [Discipline]*
    • Time box     : 25 minutes
    • Meeting goal : Diagnose the problem and propose a clear path forward.
 
@@ -68,4 +68,6 @@ CASE CARD — [Generated Title]
    • Budget cap    : [value or qualitative limit]
    • Policy limit  : [e.g., must stay GDPR compliant, max infra servers, etc.]
    • Time pressure : [e.g., release must stay on track for beta next week]
+
+• Use ${language} language.
 `);

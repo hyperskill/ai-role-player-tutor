@@ -1,8 +1,11 @@
 <template>
-	<div class="bg-background h-full flex flex-col">
+	<div
+		class="bg-background h-full flex flex-col"
+		:lang="studyCase?.language || 'en'"
+	>
 		<!-- Header with back button -->
 		<div class="flex-shrink-0 p-4 pb-6">
-			<div class="flex items-center gap-2">
+			<div class="flex items-center justify-between">
 				<NuxtLink
 					variant="outline"
 					size="sm"
@@ -11,6 +14,21 @@
 					<Icon name="lucide:arrow-left" />
 					Back to cases
 				</NuxtLink>
+
+				<!-- Edit button - only show if user owns this case -->
+				<UButton
+					v-if="user && studyCase && studyCase.user_id === user.id"
+					variant="outline"
+					size="sm"
+					@click="navigateTo(`/cases/${studyCase.slug}/edit`)"
+				>
+					<Icon
+						name="lucide:edit"
+						class="h-4 w-4 mr-2"
+						aria-hidden="true"
+					/>
+					Edit Case
+				</UButton>
 			</div>
 		</div>
 

@@ -1,14 +1,12 @@
-import { generateStudyCase, generateStudyCaseObject } from '../agents/study-case-generator';
-import { generatePersona, generatePersonaObject } from '../agents/agent-generator';
+import { generateStudyCaseObject } from '../agents/study-case-generator';
+import { generateAgentObject } from '../agents/agent-generator';
 
-export async function* generateCaseAndAgentByDomain({ domain }: { domain: string }) {
-	const caseCard = await generateStudyCase({ domain });
-	const caseObject = await generateStudyCaseObject(caseCard);
+export async function* generateCaseAndAgentByDomain({ domain, language }: { domain: string; language: string }) {
+	const caseCard = await generateStudyCaseObject(domain, language);
 
-	yield caseObject;
+	yield caseCard;
 
-	const persona = await generatePersona({ caseCard });
-	const personaObject = await generatePersonaObject(persona);
+	const agent = await generateAgentObject({ caseCard: JSON.stringify(caseCard), language });
 
-	yield personaObject;
+	yield agent;
 }

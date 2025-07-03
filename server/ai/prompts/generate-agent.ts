@@ -1,5 +1,4 @@
-export const generatePersonaPrompt = (caseCard: string) => `You are a persona-design assistant.
-
+export const generateAgentPrompt = (caseCard: string, language: string) => `
 === INPUTS YOU RECEIVE ===
 1. CASE CARD (full text of the scenario, already generated in the previous step):
 ${caseCard}
@@ -14,6 +13,7 @@ Generate a single, self-contained **PERSONA SCRIPT** that a chat-based agent can
 • Use bullet points or short paragraphs—concise but vivid.
 • All details must be *consistent* with the Case Card (domain, data, constraints).
 • Do **NOT** reveal the hidden agenda unless the participant triggers it.
+• Use ${language} language.
 
 === PERSONA SCRIPT FORMAT ===
 ==============================================================

@@ -3,16 +3,17 @@ import { z } from 'zod';
 import { generateStudyCasePrompt } from '../prompts/generate-study-case';
 import type { Case } from '~/server/types';
 
-export async function generateStudyCase({ domain }: { domain: string }) {
+export async function generateStudyCase({ domain, language }: { domain: string; language: string }) {
 	const { text } = await generateText({
-		model: 'gpt-4o-mini',
-		prompt: generateStudyCasePrompt(domain),
+		model: 'anthropic/claude-3-haiku',
+		system: 'You are a case-design assistant for leadership assessments. Your job is to create structured, text-only case scenarios for evaluating junior and middle-level team leads or project managers using live dialogue-based exercises.',
+		prompt: generateStudyCasePrompt(domain, language),
 	});
 
 	return text;
 }
 
-export async function generateStudyCaseObject(studyCase: string): Promise<Pick<Case, 'description' | 'difficulty' | 'story' | 'title' | 'criteria_outcomes'>> {
+export async function generateStudyCaseObject(domain: string, language: string): Promise<Pick<Case, 'description' | 'difficulty' | 'story' | 'title' | 'criteria_outcomes' | 'slug' | 'tags'>> {
 	const criteriaOutcomesSchema = z.object({
 		prioritization_skill: z.object({
 			description: z.string().describe('The prioritization skill description'),
@@ -32,14 +33,18 @@ export async function generateStudyCaseObject(studyCase: string): Promise<Pick<C
 	});
 
 	const { object } = await generateObject({
-		model: 'gpt-4o-mini',
-		prompt: studyCase,
+		model: 'anthropic/claude-3-haiku',
+		system: 'You are a case-design assistant for leadership assessments. Your job is to create structured, text-only case scenarios for evaluating junior and middle-level team leads or project managers using live dialogue-based exercises.',
+		prompt: generateStudyCasePrompt(domain, language),
 		schema: z.object({
-			description: z.string().describe('The description'),
-			difficulty: z.number().describe('The difficulty'),
-			story: z.string().describe('The story'),
-			title: z.string().describe('The title'),
+			description: z.string().describe('The description in 1-2 sentences for promotion purposes'),
+			difficulty: z.number().describe('The difficulty from 1 to 3 (1 - easy, 2 - medium, 3 - hard)'),
+			story: z.string().describe('The case card in markdown format, with the following sections: "Scenario", "Background", "Objectives", "Constraints", "Stakeholders", "Criteria"'),
+			title: z.string().describe('The title in 1-3 words'),
 			criteria_outcomes: criteriaOutcomesSchema,
+			slug: z.string().describe('The slug in lowercase formed from the title'),
+			tags: z.array(z.string().toLowerCase()).min(1).max(3).describe('The tags describing the Study Case'),
+			language: z.string().describe('The output language'),
 		}),
 	});
 

@@ -6,6 +6,20 @@ export default defineEventHandler(async (event) => {
 		cases: Case[];
 	}>(event);
 
-	const { data: cases } = await supabase.from('cases').select().order('id', { ascending: true });
-	return cases;
+	const casesQuery = supabase
+		.from('cases')
+		.select()
+		.order('id', { ascending: true });
+
+	const { data: cases, error } = await casesQuery;
+
+	if (error) {
+		console.error('Error fetching cases:', error);
+		throw createError({
+			statusCode: 500,
+			statusMessage: 'Failed to fetch cases',
+		});
+	}
+
+	return cases || [];
 });

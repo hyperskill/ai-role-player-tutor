@@ -7,6 +7,25 @@
 			<p class="text-lg text-muted-foreground max-w-2xl mx-auto">
 				Master your skills through interactive role-playing scenarios. Complete cases in order to unlock new challenges.
 			</p>
+
+			<!-- Create Case Button for Pro Users -->
+			<div
+				v-if="user && isPro"
+				class="mt-6"
+			>
+				<UButton
+					size="lg"
+					class="inline-flex items-center gap-2"
+					@click="navigateTo('/create-case')"
+				>
+					<Icon
+						name="lucide:plus"
+						class="h-4 w-4"
+						aria-hidden="true"
+					/>
+					Create New Case
+				</UButton>
+			</div>
 		</div>
 
 		<!-- Filters Section -->
@@ -308,6 +327,9 @@ definePageMeta({
 	layout: 'default',
 });
 
+// Get current user for reactive status fetching
+const user = useSupabaseUser();
+
 // Filter state
 const selectedTags = ref<string[]>([]);
 const selectedStatuses = ref<string[]>([]);
@@ -318,12 +340,14 @@ const selectedDifficulties = ref<string[]>([]);
 const isFiltersExpanded = ref(false);
 
 // Fetch cases and user statuses
-const { data: cases, pending } = await useAsyncData('cases', () => {
-	return $fetch<Case[]>('/api/cases');
+const { data: cases, pending, refresh: refreshCases } = await useAsyncData('cases', () => {
+	console.log('Fetching cases');
+	const params = user.value?.id ? { user_id: user.value.id } : {};
+	return $fetch<Case[]>('/api/cases', { query: params });
 });
 
-// Get current user for reactive status fetching
-const user = useSupabaseUser();
+// Get subscription status
+const { isPro } = useSubscription();
 
 // Utility function to categorize difficulty (matches CaseCard logic)
 const categorizeDifficulty = (difficultyValue: number | null): string => {
@@ -344,11 +368,6 @@ const categorizeDifficulty = (difficultyValue: number | null): string => {
 const { data: caseStatuses, pending: statusPending, refresh: refreshStatuses } = await useAsyncData(
 	'user-case-statuses',
 	async () => {
-		// Wait for user authentication to be resolved
-		if (!user.value) {
-			return null;
-		}
-
 		try {
 			return await $fetch<Record<string, { status: ChatStatus; chatId: number }>>('/api/user-case-statuses');
 		}
@@ -369,6 +388,7 @@ const { data: caseStatuses, pending: statusPending, refresh: refreshStatuses } =
 onMounted(() => {
 	if (user.value) {
 		refreshStatuses();
+		refreshCases();
 	}
 });
 
@@ -378,6 +398,7 @@ watch(user, async (newUser, oldUser) => {
 	if (newUser && !oldUser) {
 		await nextTick();
 		refreshStatuses();
+		refreshCases();
 	}
 }, { immediate: false });
 
