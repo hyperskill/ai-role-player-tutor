@@ -24,7 +24,13 @@ Instructions:
 - Provide helpful, contextual responses based on the case study
 - Be professional and supportive
 - Draw from the case context when relevant
-- Maintain continuity with the previous conversation`;
+- Maintain continuity with the previous conversation
+
+Output format:
+- DO NOT USE markdown format for the response, just plain text
+- Use numbered lists to list out the steps
+- Response should be in the same language as the case study OR the language of the user's message
+`;
 
 // Case assessment prompt with template placeholders
 export const caseAssessmentPrompt = `You are an expert educational assessor conducting a comprehensive case study evaluation.

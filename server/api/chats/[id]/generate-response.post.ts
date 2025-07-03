@@ -2,7 +2,6 @@ import { generateText } from 'ai';
 import { z } from 'zod';
 import { requireAuth } from '~/server/utils/requireAuth';
 import { serverSupabaseServiceRole } from '#supabase/server';
-import { chatResponsePrompt, replaceTemplateVars } from '~/server/utils/prompts';
 import type { Database } from '~/database.types';
 import type { Message } from '~/server/types';
 
@@ -101,22 +100,29 @@ export default defineEventHandler(async (event): Promise<GenerateResponseOutput>
 			`${msg.type === 'user' ? 'User' : 'Agent'}: ${msg.text}`,
 		).join('\n');
 
-		// Prepare the templated prompt
-		const systemPrompt = replaceTemplateVars(chatResponsePrompt, {
-			agentName: chatData.case_id.agent_id.name || 'AI Assistant',
-			agentPosition: chatData.case_id.agent_id.position || 'an AI assistant',
-			agentPrompt: chatData.case_id.agent_id.prompt || 'Help the user with their case study.',
-			caseTitle: chatData.case_id.title || 'Case Study',
-			caseDescription: chatData.case_id.description || '',
-			caseStory: chatData.case_id.story || '',
-			conversationHistory: conversationHistory || 'No previous conversation.',
-		});
-
 		// Generate AI response
 		const { text: aiResponse } = await generateText({
 			model: 'google/gemini-2.0-flash-001',
-			system: systemPrompt,
-			prompt: `User: ${userMessage}`,
+			system: chatData.case_id.agent_id.prompt || '',
+			messages: [
+				{
+					role: 'system',
+					content: chatData.case_id.story || '',
+				},
+				{
+					role: 'system',
+					content: chatData.case_id.description || '',
+				},
+				{
+					role: 'system',
+					content: conversationHistory,
+				},
+				{
+					role: 'user',
+					content: userMessage,
+				},
+			],
+			temperature: 0.7,
 		});
 
 		// Update the chat with the new agent message

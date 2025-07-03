@@ -32,6 +32,7 @@
 - **Observer Pattern**: Real-time chat updates via Supabase subscriptions
 - **Authorization Pattern**: Multi-layered access control with authentication and subscription verification
 - **Content Management Pattern**: CRUD operations with ownership verification and subscription gating
+- **AI Content Alignment Pattern**: Strict case-agent persona matching through prompt engineering and validation
 
 ## Component Relationships
 ```
@@ -64,6 +65,31 @@ App Layout (default.vue/case.vue)
 - **Chat Creation**: Case selection → agent assignment → database insert → real-time subscription setup
 - **AI Response Generation**: User message → context gathering → OpenAI API → agent-specific response → database update
 - **Progress Tracking**: Case completion → status updates → dependency resolution → new case unlocking
+- **AI Content Generation Flow**: Domain input → case generation with specific agent details → agent extraction and persona creation → validation and alignment check
+
+## AI Content Generation Patterns
+**Case Generation Pattern:**
+```
+Domain Input → Case Generation Prompt (with agent requirements) →
+Structured Case Output (with specific agent details) →
+Clean Text Extraction → Agent Generation Input
+```
+
+**Agent Generation Pattern:**
+```
+Case Story Content → Agent Extraction Prompt (with validation rules) →
+Agent Persona Creation (matching case details) →
+Validation Check → Final Agent Object
+```
+
+**Content Alignment Validation:**
+```
+Generated Case + Generated Agent →
+Name/Position Consistency Check →
+Background/Expertise Alignment Check →
+Content Quality Validation →
+Final Content Approval
+```
 
 ## API Endpoint Patterns
 ```
@@ -122,3 +148,4 @@ Request → Authentication Check → Subscription Verification → Ownership Val
 - Polling fallbacks for reliable updates
 - Multi-step AI workflows with status updates
 - Error handling and recovery mechanisms
+- Case-agent alignment validation throughout generation process

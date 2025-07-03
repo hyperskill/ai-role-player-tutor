@@ -4,14 +4,13 @@
 		:class="message.type === 'user' ? 'justify-end' : 'justify-start'"
 	>
 		<div class="max-w-[80%]">
-			<div
-				class="rounded-lg px-4 py-2 text-sm"
+			<MDC
+				:value="message.text"
+				class="rounded-lg px-4 py-2 text-sm!"
 				:class="message.type === 'user'
 					? 'bg-primary text-primary-foreground ml-auto'
 					: 'bg-muted'"
-			>
-				{{ message.text }}
-			</div>
+			/>
 			<div
 				class="text-xs text-muted-foreground mt-1"
 				:class="message.type === 'user' ? 'text-right' : 'text-left'"
@@ -23,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+import { MDC } from '#components';
+
 interface Message {
 	type: 'user' | 'agent';
 	text: string;
