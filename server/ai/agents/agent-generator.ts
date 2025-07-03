@@ -1,18 +1,15 @@
-import { generateObject } from 'ai';
+import { generateObject, generateText } from 'ai';
 import { z } from 'zod';
-import { generatePersonaPrompt } from '../prompts/generate-persona';
+import { generatePersonaPrompt } from '../prompts/generate-agent';
 import type { Agent } from '~/server/types';
 
 export async function generatePersona({ caseCard }: { caseCard: string }) {
-	const { object } = await generateObject({
+	const { text } = await generateText({
 		model: 'gpt-4o-mini',
 		prompt: generatePersonaPrompt(caseCard),
-		schema: z.object({
-			persona: z.string().describe('The persona script'),
-		}),
 	});
 
-	return object;
+	return text;
 }
 
 export async function generatePersonaObject(persona: string): Promise<Pick<Agent, 'name' | 'position' | 'prompt'>> {

@@ -1,5 +1,5 @@
 import { generateStudyCase, generateStudyCaseObject } from '../agents/study-case-generator';
-import { generatePersona, generatePersonaObject } from '../agents/persona-generator';
+import { generatePersona, generatePersonaObject } from '../agents/agent-generator';
 
 export async function* generateCaseAndAgentByDomain({ domain }: { domain: string }) {
 	const caseCard = await generateStudyCase({ domain });
@@ -8,7 +8,7 @@ export async function* generateCaseAndAgentByDomain({ domain }: { domain: string
 	yield caseObject;
 
 	const persona = await generatePersona({ caseCard });
-	const personaObject = await generatePersonaObject(persona.persona);
+	const personaObject = await generatePersonaObject(persona);
 
 	yield personaObject;
 }
