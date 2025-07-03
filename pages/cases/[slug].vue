@@ -220,7 +220,8 @@
 
 <script setup lang="ts">
 import type { Database } from '~/database.types';
-import { ChatStatus, type Case, type Chat } from '~/server/types';
+import { ChatStatus } from '~/server/types';
+import type { Case, Chat } from '~/server/types';
 
 // Page metadata - Use case layout and no auth middleware, we handle auth with overlay
 definePageMeta({

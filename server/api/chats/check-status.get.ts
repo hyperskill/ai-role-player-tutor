@@ -1,6 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server';
 import { requireAuth } from '~/server/utils/requireAuth';
-import { ChatStatus, type Chat } from '~/server/types';
+import { ChatStatus } from '~/server/types';
+import type { Chat } from '~/server/types';
 
 export default defineEventHandler(async (event) => {
 	const user = await requireAuth(event);

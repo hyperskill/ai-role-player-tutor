@@ -4,11 +4,11 @@ import { reactiveOmit } from '@vueuse/core';
 import {
 	DialogClose,
 	DialogContent,
-	type DialogContentEmits,
-	type DialogContentProps,
+
 	DialogPortal,
 	useForwardPropsEmits,
 } from 'reka-ui';
+import type { DialogContentEmits, DialogContentProps } from 'reka-ui';
 import DialogOverlay from './DialogOverlay.vue';
 import { cn } from '@/lib/utils';
 

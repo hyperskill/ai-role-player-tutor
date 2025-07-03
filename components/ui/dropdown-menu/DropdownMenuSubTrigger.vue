@@ -3,9 +3,10 @@ import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
 	DropdownMenuSubTrigger,
-	type DropdownMenuSubTriggerProps,
+
 	useForwardProps,
 } from 'reka-ui';
+import type { DropdownMenuSubTriggerProps } from 'reka-ui';
 import { cn } from '@/lib/utils';
 
 const props = defineProps<DropdownMenuSubTriggerProps & { class?: HTMLAttributes['class']; inset?: boolean }>();

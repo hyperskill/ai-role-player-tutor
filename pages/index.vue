@@ -290,10 +290,12 @@
 </template>
 
 <script setup lang="ts">
-import { type Case, ChatStatus } from '~/server/types';
+import { ChatStatus } from '~/server/types';
+import type { Case } from '~/server/types';
 import CaseCard from '@/components/CaseCard.vue';
 import LockedCaseCard from '@/components/LockedCaseCard.vue';
-import FilterDropdown, { type FilterOption } from '@/components/FilterDropdown.vue';
+import FilterDropdown from '@/components/FilterDropdown.vue';
+import type { FilterOption } from '@/components/FilterDropdown.vue';
 
 interface CaseWithStatus extends Case {
 	isAvailable: boolean;
